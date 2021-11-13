@@ -11,6 +11,8 @@
 
 ## General info
 
+Project of the subject: Ubiquitous Computing & Embedded Systems.
+
 
 ![project_all](https://user-images.githubusercontent.com/10574631/141642325-59ed1986-85b4-43cc-8574-5b84bb682db2.png)
 
@@ -22,11 +24,17 @@ Components:
 * LCD Screen
 
 ## Data Producer 2
-Components:
-* ESP-01
-* ADXL345
-* LCD Display 16x2
-* PF....
+
+  Components:
+  * ESP-01
+  * ADXL345
+  * LCD Display 16x2
+  * PCF8574T
+
+  Connections:
+
+  ![dp2](https://user-images.githubusercontent.com/10574631/141659065-3336e771-082f-4c07-b2f8-35d228788038.png)
+
 ## MQTT Broker
 Components:
 * NodeMcu
