@@ -35,6 +35,10 @@ Components:
 
   ![dp2](https://user-images.githubusercontent.com/10574631/141659065-3336e771-082f-4c07-b2f8-35d228788038.png)
 
+  Working:
+
+  ![dp2work](https://user-images.githubusercontent.com/10574631/141686026-fedbf773-6796-4589-894b-0f5f358a0f54.gif)
+
 ## MQTT Broker
 Components:
 * NodeMcu
