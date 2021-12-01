@@ -53,6 +53,10 @@ Components:
 * LCD Screen
 * Raspberry Pi
 
+Connections:
+
+![MQTT](https://user-images.githubusercontent.com/10574631/144288629-935dc973-7754-47f7-9460-0a5b0d6aa721.png)
+
 
 
 
