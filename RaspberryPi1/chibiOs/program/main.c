@@ -23,14 +23,16 @@
 #include "chprintf.h"
 
 static const uint8_t slave_address = 0x04;
-
+uint8_t rxbuf[10] = {0};
 
 static WORKING_AREA(waThread_I2C, 128);
+
 static msg_t Thread_I2C(void *p) {
   (void)p;
   chRegSetThreadName("SerialPrintI2C");
+  uint8_t txbuf[10] = {0};
   uint8_t request[]={0,0};
-  uint8_t result=0;
+  //uint8_t result=0;
   msg_t status;
   
   // Some time to allow slaves initialization
@@ -39,23 +41,11 @@ static msg_t Thread_I2C(void *p) {
   while (TRUE) {
 
     // Request values
-    i2cMasterTransmit( &I2C0, slave_address, request, 2, 
-                       &result, 1);
+    i2cMasterTransmit( &I2C0, slave_address, txbuf, 2, 
+                       rxbuf, 10);
                        
     chThdSleepMilliseconds(10);
-     
-    sdPut(&SD1, (int8_t)0x7C);
-    sdPut(&SD1, (int8_t)0x18);
-    sdPut(&SD1, (int8_t)0x00);
-    chThdSleepMilliseconds(10);
-    
-    sdPut(&SD1, (int8_t)0x7C);
-    sdPut(&SD1, (int8_t)0x19);
-    sdPut(&SD1, (int8_t)0x20);
-    chThdSleepMilliseconds(10);
-      
-    chprintf((BaseSequentialStream *)&SD1, "Aval. %ux%u: %u  ", 
-                                     request[0],request[1], result);
+
     request[1]++;
     if (request[1]>10) {
       request[1] = 0;
@@ -67,19 +57,50 @@ static msg_t Thread_I2C(void *p) {
   return 0;
 }
 
+static msg_t Thread_LCD(void *p) {
+  (void)p;
+  chRegSetThreadName("SerialLCD");
+  uint16_t iteration=0;
+  while (TRUE) {
+    sdPut(&SD1, (uint8_t)0x7C);
+    sdPut(&SD1, (uint8_t)0x18);
+    sdPut(&SD1, (uint8_t)0x20);
+    chThdSleepMilliseconds(10);
+    
+    sdPut(&SD1, (uint8_t)0x7C);
+    sdPut(&SD1, (uint8_t)0x19);
+    sdPut(&SD1, (uint8_t)0x20);
+    chThdSleepMilliseconds(10);  
+    
+    chprintf((BaseSequentialStream *)&SD1, "Temperature: %u ºC  Humidity: %u \%", result[0], result[1]); 
+   
+    iteration++;
+    chThdSleepMilliseconds(2000);
+  }
+  return 0;
+}
+
 int main(void) {
   halInit();
   chSysInit();
 
-  // Initialize Serial Port
+   /*
+   * LCD Screen initialization.
+   */
   sdStart(&SD1, NULL); 
+  chprintf((BaseSequentialStream *)&SD1, "Loading .."); 
   
+  /*
+   * Thread LCD Screen
+   */
+  chThdCreateStatic(waThread_LCD, sizeof(waThread_LCD), HIGHPRIO-10, Thread_LCD, NULL);
   /*
    * I2C initialization.
    */
   I2CConfig i2cConfig;
   i2cStart(&I2C0, &i2cConfig);
-   
+
+  
   chThdCreateStatic(waThread_I2C, sizeof(waThread_I2C), 
                                           HIGHPRIO, Thread_I2C, NULL);
 
