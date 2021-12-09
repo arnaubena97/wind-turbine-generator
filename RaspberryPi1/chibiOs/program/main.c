@@ -22,45 +22,72 @@
 #include "hal.h"
 #include "chprintf.h"
 
+/*===========================================
+GLOBAL VARIABLES
+=============================================*/
+#define NUM_HISTORY 3
 static const uint8_t slave_address = 0x04;
 uint8_t rxbuf[10] = {0};
-
 static WORKING_AREA(waThread_I2C, 128);
+/*===========================================
+STRUCT AND VARIABLES OF DATA PRODUCER 1
+=============================================*/
+typedef struct {
+  float temperature;
+  float humidity;
+} dht11;
+struct dht11 data_dp1[NUM_HISTORY]
+msg_t dataprod1_msg;
 
+/*===========================================
+STRUCT AND VARIABLES OF DATA PRODUCER 2
+=============================================*/
+typedef struct {
+  float x_axis;
+  float y_axis;
+  float z_axis
+} adxl345;
+struct adxl345 data_dp2[NUM_HISTORY]
+msg_t dataprod2_msg;
+
+/*===========================================
+RECIVE DATA PRODUCER 1
+=============================================*/
+void recieveDataProd1(void){
+  const uint8_t  req = 0; // request to know how to send on arduino
+  dataprod1_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&data_dp1,
+                                   sizeof(data_dp1), MS2ST(1000));  
+  chThdSleepMilliseconds(1000);                            
+}
+/*===========================================
+RECIVE DATA PRODUCER 2
+=============================================*/
+void recieveDataProd2(void){
+  const uint8_t  req = 1; // request to know how to send on arduino
+  dataprod1_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&data_dp2,
+                                   sizeof(data_dp2), MS2ST(1000));  
+  chThdSleepMilliseconds(1000);                            
+}
+/*===========================================
+THREAD I2C BUS
+=============================================*/
 static msg_t Thread_I2C(void *p) {
   (void)p;
-  chRegSetThreadName("SerialPrintI2C");
-  uint8_t txbuf[10] = {0};
-  uint8_t request[]={0,0};
-  //uint8_t result=0;
-  msg_t status;
-  
-  // Some time to allow slaves initialization
-  chThdSleepMilliseconds(2000);
-  
+  chRegSetThreadName("Recive I2C");
+ 
   while (TRUE) {
-
-    // Request values
-    i2cMasterTransmit( &I2C0, slave_address, txbuf, 2, 
-                       rxbuf, 10);
-                       
-    chThdSleepMilliseconds(10);
-
-    request[1]++;
-    if (request[1]>10) {
-      request[1] = 0;
-      request[0]++;
-    }
-      
+    recieveDataProd1();
+    recieveDataProd2();
     chThdSleepMilliseconds(2000);
   }
   return 0;
 }
-
+/*===========================================
+THREAD LCD PRINT
+=============================================*/
 static msg_t Thread_LCD(void *p) {
   (void)p;
   chRegSetThreadName("SerialLCD");
-  uint16_t iteration=0;
   while (TRUE) {
     sdPut(&SD1, (uint8_t)0x7C);
     sdPut(&SD1, (uint8_t)0x18);
@@ -72,9 +99,8 @@ static msg_t Thread_LCD(void *p) {
     sdPut(&SD1, (uint8_t)0x20);
     chThdSleepMilliseconds(10);  
     
-    chprintf((BaseSequentialStream *)&SD1, "Temperature: %u ºC  Humidity: %u \%", result[0], result[1]); 
+    chprintf((BaseSequentialStream *)&SD1, "Temperature: %d ºC  Humidity: %d ", data_dp1[0].temperature, data_dp1[0].humidity); 
    
-    iteration++;
     chThdSleepMilliseconds(2000);
   }
   return 0;
@@ -100,7 +126,9 @@ int main(void) {
   I2CConfig i2cConfig;
   i2cStart(&I2C0, &i2cConfig);
 
-  
+   /*
+   * Thread I2c BUS
+   */
   chThdCreateStatic(waThread_I2C, sizeof(waThread_I2C), 
                                           HIGHPRIO, Thread_I2C, NULL);
 
