@@ -27,16 +27,18 @@ GLOBAL VARIABLES
 =============================================*/
 #define NUM_HISTORY 3
 static const uint8_t slave_address = 0x04;
-uint8_t rxbuf[10] = {0};
 static WORKING_AREA(waThread_I2C, 128);
+static WORKING_AREA(waThread_LCD, 256);
+int cnt = 0;
 /*===========================================
 STRUCT AND VARIABLES OF DATA PRODUCER 1
 =============================================*/
 typedef struct {
-  float temperature;
-  float humidity;
+  int temperature;
+  int humidity;
 } dht11;
-struct dht11 data_dp1[NUM_HISTORY]
+dht11 p1;
+dht11 data_dp1[NUM_HISTORY];
 msg_t dataprod1_msg;
 
 /*===========================================
@@ -45,9 +47,9 @@ STRUCT AND VARIABLES OF DATA PRODUCER 2
 typedef struct {
   float x_axis;
   float y_axis;
-  float z_axis
+  float z_axis;
 } adxl345;
-struct adxl345 data_dp2[NUM_HISTORY]
+adxl345 data_dp2[NUM_HISTORY];
 msg_t dataprod2_msg;
 
 /*===========================================
@@ -55,17 +57,20 @@ RECIVE DATA PRODUCER 1
 =============================================*/
 void recieveDataProd1(void){
   const uint8_t  req = 0; // request to know how to send on arduino
-  dataprod1_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&data_dp1,
-                                   sizeof(data_dp1), MS2ST(1000));  
-  chThdSleepMilliseconds(1000);                            
+  dataprod1_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&p1,
+                                   sizeof(p1), MS2ST(2000));  
+
+                                    cnt ++;
+  chThdSleepMilliseconds(3000);                            
 }
 /*===========================================
 RECIVE DATA PRODUCER 2
 =============================================*/
 void recieveDataProd2(void){
   const uint8_t  req = 1; // request to know how to send on arduino
-  dataprod1_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&data_dp2,
+  dataprod2_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&data_dp2,
                                    sizeof(data_dp2), MS2ST(1000));  
+ 
   chThdSleepMilliseconds(1000);                            
 }
 /*===========================================
@@ -75,9 +80,12 @@ static msg_t Thread_I2C(void *p) {
   (void)p;
   chRegSetThreadName("Recive I2C");
  
+
+ p1.temperature = 2;
+ p1.humidity = 6;
   while (TRUE) {
     recieveDataProd1();
-    recieveDataProd2();
+    //recieveDataProd2();
     chThdSleepMilliseconds(2000);
   }
   return 0;
@@ -97,11 +105,31 @@ static msg_t Thread_LCD(void *p) {
     sdPut(&SD1, (uint8_t)0x7C);
     sdPut(&SD1, (uint8_t)0x19);
     sdPut(&SD1, (uint8_t)0x20);
-    chThdSleepMilliseconds(10);  
+    chThdSleepMilliseconds(10);
     
-    chprintf((BaseSequentialStream *)&SD1, "Temperature: %d ºC  Humidity: %d ", data_dp1[0].temperature, data_dp1[0].humidity); 
-   
-    chThdSleepMilliseconds(2000);
+    chprintf((BaseSequentialStream *)&SD1, "Temperature: %dC \n Humidity: %d \n", p1.temperature, p1.humidity); 
+   chprintf((BaseSequentialStream *)&SD1, " CNT: %d\n", cnt);
+      switch (dataprod1_msg) {
+  case Q_TIMEOUT:
+    chprintf((BaseSequentialStream *)&SD1, "Timeout\n");
+    break;
+  case Q_OK:
+    chprintf((BaseSequentialStream *)&SD1, "Received Dt1\n");
+    break;
+  case Q_RESET:
+    chprintf((BaseSequentialStream *)&SD1, "Reset: %d\n", dataprod1_msg);
+    i2cflags_t i2cFlags = i2cGetErrors(&I2C0);
+    chprintf((BaseSequentialStream *)&SD1, "Flags: %d\n", i2cFlags);
+    I2CConfig i2cConfig;
+    i2cStop(&I2C0);
+    i2cStart(&I2C0, &i2cConfig);
+    break;
+  default:
+    chprintf((BaseSequentialStream *)&SD1, "Default, should not happen");
+    break;
+  }
+    
+    chThdSleepMilliseconds(1000);
   }
   return 0;
 }
@@ -114,7 +142,7 @@ int main(void) {
    * LCD Screen initialization.
    */
   sdStart(&SD1, NULL); 
-  chprintf((BaseSequentialStream *)&SD1, "Loading .."); 
+  //chprintf((BaseSequentialStream *)&SD1, "Loading .."); 
   
   /*
    * Thread LCD Screen
