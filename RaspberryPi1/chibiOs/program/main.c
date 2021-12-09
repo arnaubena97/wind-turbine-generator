@@ -109,26 +109,7 @@ static msg_t Thread_LCD(void *p) {
     
     chprintf((BaseSequentialStream *)&SD1, "Temperature: %dC \n Humidity: %d \n", p1.temperature, p1.humidity); 
    chprintf((BaseSequentialStream *)&SD1, " CNT: %d\n", cnt);
-      switch (dataprod1_msg) {
-  case Q_TIMEOUT:
-    chprintf((BaseSequentialStream *)&SD1, "Timeout\n");
-    break;
-  case Q_OK:
-    chprintf((BaseSequentialStream *)&SD1, "Received Dt1\n");
-    break;
-  case Q_RESET:
-    chprintf((BaseSequentialStream *)&SD1, "Reset: %d\n", dataprod1_msg);
-    i2cflags_t i2cFlags = i2cGetErrors(&I2C0);
-    chprintf((BaseSequentialStream *)&SD1, "Flags: %d\n", i2cFlags);
-    I2CConfig i2cConfig;
-    i2cStop(&I2C0);
-    i2cStart(&I2C0, &i2cConfig);
-    break;
-  default:
-    chprintf((BaseSequentialStream *)&SD1, "Default, should not happen");
-    break;
-  }
-    
+ 
     chThdSleepMilliseconds(1000);
   }
   return 0;
