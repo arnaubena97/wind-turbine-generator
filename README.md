@@ -70,7 +70,6 @@ Connections:
   <tr>
     <td align="center"><a href="https://github.com/arnaubena97"><img src="https://avatars0.githubusercontent.com/u/10574631?s=460&v=4" width="100px;" alt=""/><br /><sub><b>Arnau Benavides</b></sub></a></td>
     <td align="center"><a href="https://github.com/MarcFelip"><img src="https://avatars.githubusercontent.com/u/58440805?v=4" width="100px;" alt=""/><br /><sub><b>Marc Felip</b></sub></a><br /></td>
-    <td align="center"><a href="https://github.com/JassNorris"><img src="https://avatars.githubusercontent.com/u/47559748?v=4" width="100px;" alt=""/><br /><sub><b>Jassine</b></sub></a><br /></td>
 
   </tr>
  </table>
