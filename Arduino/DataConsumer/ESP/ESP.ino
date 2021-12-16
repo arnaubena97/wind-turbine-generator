@@ -50,35 +50,12 @@ void setup_wifi() {
 }
 
 
-/*
-String messageToPass[1];
-String contentString;
-
+String message;
 void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-
-  char content[length];
-  for(int i = 0; i < length; i++){
-    Serial.print((char) payload[i]);
-    
-    contentString.concat((char) payload[i]);
-    content[i] = (char)payload[i];
-    
-    Serial.print("\n");
-  }
-  messageToPass[0] = contentString;
-  Serial.println();
-}
-*/
-
-void callback(char* topic, byte* payload, unsigned int length) {
-  //Serial.print("Message arrived [");
-  //Serial.print(topic);
-  //Serial.print("] ");
+  message = "";
   for (int i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
+    message.concat((char) payload[i]);
+    //Serial.print((char)payload[i]);
     
   }
   Serial.println();
@@ -122,6 +99,9 @@ void setup() {
 }
 
 void loop() {
+  for (int i = 0; i < message.length(); i++){
+    Serial.print(message[i]);
+  }
     client.loop();   
-    delay(10);
+    delay(1000);
 }
