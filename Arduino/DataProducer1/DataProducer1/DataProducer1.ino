@@ -18,6 +18,8 @@ void setup() {
   setHome();
   delay(10);
   dht.begin();
+  delay(5000);
+  clearScreen();
 }
 
 
