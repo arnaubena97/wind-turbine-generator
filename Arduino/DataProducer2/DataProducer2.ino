@@ -42,8 +42,8 @@ byte wifiChar1[] = {
 
 
 //wifi
-const char* ssid = "ssid";
-const char* password = "password";
+const char* ssid = "ssidq";
+const char* password = "passwordq";
 const char* mqtt_server = "192.168.4.1";
 
 WiFiClient espClient;

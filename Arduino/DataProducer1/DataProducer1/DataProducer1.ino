@@ -1,14 +1,54 @@
 
 #include "DHT.h"
+#include <ESP8266WiFi.h>
+#include <PubSubClient.h>
+
 
 #define DHTPIN 2     // Digital pin connected to the DHT sensor
 #define DHTTYPE DHT11   // DHT 1
 #define maxX 127//159 
 #define maxY 63 //127
 
-bool writeerase = true;
-
 DHT dht(DHTPIN, DHTTYPE);
+
+
+//wifi
+const char* ssid = "ssidq";
+const char* password = "passwordq";
+const char* mqtt_server = "192.168.4.1";
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+unsigned long lastMsg = 0;
+#define MSG_BUFFER_SIZE  (50)
+char msg[MSG_BUFFER_SIZE];
+char msg2[MSG_BUFFER_SIZE];
+int value = 0;
+boolean iswificlear = true;
+
+void setup_wifi() {
+  delay(10);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  //quit comment if not work
+  //while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  //}
+  randomSeed(micros());
+
+}
+void reconnect() {
+    String clientId = "ESP8266Client-";
+    clientId += String(random(0xffff), HEX);
+    // Attempt to connect
+    if (client.connect(clientId.c_str())) {
+      client.publish("outTopic", "hello world");
+      client.subscribe("inTopic");
+    } else {
+      delay(1000);
+    }
+}
+
 
 void setup() {
   Serial.begin(115200);
@@ -18,14 +58,23 @@ void setup() {
   setHome();
   delay(10);
   dht.begin();
+  setup_wifi();
+  client.setServer(mqtt_server, 1883);
   delay(5000);
   clearScreen();
 }
 
-
-
 void loop() {
-  
+  if (!client.connected()) {
+    if(iswificlear){
+        clearScreen();
+        iswificlear = false;
+    }
+    reconnect();
+  }else{
+    iswificlear = true;
+    drawWifi();
+  }
   
   // Reading temperature or humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
@@ -41,7 +90,13 @@ void loop() {
   float hic = dht.computeHeatIndex(t, h, false);
   drawBoxes();
   printText(t, h, hic);
-  //drawWifi();
+
+  String mess = "Temp=" + String(t);
+  mess.toCharArray(msg, 50);
+  String mess2 = "Hum=" + String(h);
+  mess2.toCharArray(msg2, 50);
+  client.publish("broker/dht11/Temp", msg);
+  client.publish("broker/dht11/Hum", msg2);
   
   
   delay(1500);
