@@ -6,6 +6,10 @@ const char* ssid = "ssid1";
 const char* password = "password1";
 const char* mqtt_server = "192.168.4.1";
 
+const char* clientID = "ESP-01";
+const char* clientUserName = "ESP-01";
+const char* clientPassword = "ESP-01";
+
 //variables globals del callback
 /*
 byte* buffer;
@@ -13,9 +17,13 @@ boolean Rflag=false;
 int r_len;
 */
 
-byte var;
+//byte var;
 WiFiClient espClient;
 PubSubClient client(espClient);
+unsigned long lastMsg = 0;
+#define MSG_BUFFER_SIZE  (50)
+char msg[MSG_BUFFER_SIZE];
+int value = 0;
 
 void setup_wifi() {
 
@@ -42,31 +50,21 @@ void setup_wifi() {
 }
 
 
-
-String messageToPass[1];
-String contentString;
-
+String message;
 void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-
-  char content[length];
-  for(int i = 0; i < length; i++){
-    Serial.print((char) payload[i]);
+  message = "";
+  for (int i = 0; i < length; i++) {
+    message.concat((char) payload[i]);
+    //Serial.print((char)payload[i]);
     
-    contentString.concat((char) payload[i]);
-    content[i] = (char)payload[i];
-    
-    Serial.print("\n");
   }
-  messageToPass[0] = contentString;
   Serial.println();
+
 }
 
 
 void reconnect() {
-  // Loop until we're reconnected
+ // Loop until we're reconnected
  // while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Create a random client ID
@@ -94,25 +92,16 @@ void setup() {
   setup_wifi();
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
- 
-  client.subscribe("#");
+  client.connect(clientID,clientUserName,clientPassword);
+  client.subscribe("broker/counter");
   delay(100);
 
 }
 
 void loop() {
-    if (!client.connected()) {
-        reconnect();
-    }
-    Serial.print("Message: ");
-    for(int i = 0; i < sizeof(messageToPass); i++){
-      Serial.print(messageToPass[i]);
-      
-    }
-    Serial.print("\n");
-    //Serial.print("Message: " + content + "\n");
-   
+  for (int i = 0; i < message.length(); i++){
+    Serial.print(message[i]);
+  }
     client.loop();   
-
-
+    delay(1000);
 }
