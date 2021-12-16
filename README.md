@@ -5,6 +5,7 @@
 * [Data Producer 2](#data-producer-2)
 * [MQTT Broker](#mqtt-broker)
 * [Data Consumer](#data-consumer)
+* [Testing with Mosquitto](#testing-with-mosquitto)
 * [Contributors](#contributors)
 
 
@@ -21,7 +22,13 @@ Project of the subject: Ubiquitous Computing & Embedded Systems.
 Components:
 * ESP-01
 * DHT11
-* LCD Screen
+* LCD Screen 128x64
+
+Connections:
+![image](https://user-images.githubusercontent.com/10574631/146461469-68cd5f64-a277-434a-94d7-b0d80d35c5c7.png)
+
+Working:
+![image](https://user-images.githubusercontent.com/10574631/146462222-d41a657e-3c51-4086-b997-24b5d4edfbf1.png)
 
 ## Data Producer 2
 
@@ -60,7 +67,19 @@ Components:
 Connections:
 
 
+## Testing with Mosquitto
 
+To know if [Data Producer 1](#data-producer-1) and [Data Producer 2](#data-producer-2) works fine we use [Mosquitto](https://mosquitto.org). We publish the data on MQTT, this can be via the [MQTT Broker](#mqtt-broker) or connect to your personal wifi.
+You need to connect the computer to wifi that publish the data. Open the terminal and run:
+
+```
+mosquitto_sub -h 192.168.4.1 -t # -q 1 -u q
+```
+In my case, the IP are 192.168.4.1(default). I'm subscribed in all: "#". The quality QoS: "1" and I'm the user: "q".
+If you need more clients, can use the same command with different user.
+An example for the data that i recieve from [Data Producer 1](#data-producer-1) and [Data Producer 2](#data-producer-2):
+
+![image](https://user-images.githubusercontent.com/10574631/146458070-a1b922c5-70de-496b-b252-ccd507972ad5.png)
 
 ## Contributors
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
