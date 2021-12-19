@@ -21,17 +21,17 @@
 #include "ch.h"
 #include "hal.h"
 #include "chprintf.h"
-#include "chvt.h"
 /*===========================================
 GLOBAL VARIABLES
 =============================================*/
 #define NUM_HISTORY 3
+//#define MUTEX_DECL(mtx1) 
+//Mutex mtx1 = _MUTEX_DATA(mtx1);
 static const uint8_t slave_address = 0x04;
 static WORKING_AREA(waThread_I2C, 256);
-static WORKING_AREA(waThread_LCD, 128);
-static mutex_t mtx1;
+//static WORKING_AREA(waThread_LCD, 128);
 int cnt = 0;
-I2CConfig i2cConfig;
+
 /*===========================================
 DECLARE FUNCTIONS
 =============================================*/
@@ -71,14 +71,19 @@ int prova =0;
 RECIVE DATA PRODUCER 1
 =============================================*/
 void recieveDataProd1(void){
-  const uint8_t  req = 0; // request to know how to send on arduino
+  const uint8_t  req = 1; // request to know how to send on arduino
+  
+  //i2cAcquireBus(&I2C0);
+
   //dataprod1_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&p1,
-   //                                8, MS2ST(1000));  
-  dataprod1_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&prova,
-                                   4, MS2ST(2000));  
+   //                              8, MS2ST(1000));  
+  dataprod1_msg = i2cMasterReceiveTimeout(&I2C0, slave_address,  (uint8_t *)prova,4, MS2ST(1000));
+  //dataprod1_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)prova,4, MS2ST(1000));  
 
                                     cnt ++;
-  chThdSleepMilliseconds(3000);   
+  
+  //i2cReleaseBus(&I2C0);
+  chThdSleepMilliseconds(2000);   
                       
 }
 /*===========================================
@@ -102,14 +107,17 @@ static msg_t Thread_I2C(void *p) {
 
  p1.temperature = (float)23.1;
  p1.humidity = (float)57.6;
- //chThdSleepMilliseconds(100);
+ chThdSleepMilliseconds(100);
   while (TRUE) {
-    chMtxLock(&mtx1);
+    //chMtxLock(&mtx1);
     recieveDataProd1();
+        clearScreen();
+    printDHT();
+    reset();
     //reset();
     //recieveDataProd2();
     //chThdSleepMilliseconds(2000);
-    chMtxUnlock(&mtx1);
+    //chMtxUnlock();
   }
   return 0;
 }
@@ -121,11 +129,11 @@ static msg_t Thread_LCD(void *p) {
   chRegSetThreadName("SerialLCD");
 
   while (TRUE) {
-    chMtxLock(&mtx1);
+    //chMtxLock(&mtx1);
     clearScreen();
     printDHT();
     reset();
-    chMtxUnlock(&mtx1);
+    //chMtxUnlock();
   }
   return 0;
 }
@@ -134,29 +142,24 @@ int main(void) {
   halInit();
   chSysInit();
   /*
-   * Mutex initialization.
-   */
-  chMtxObjectInit(&mtx1);
-  /*
    * LCD Screen initialization.
    */
   sdStart(&SD1, NULL); 
   /*
    * I2C initialization.
    */
-  i2cStop(&I2C0);
+  I2CConfig i2cConfig;
+  //i2cStop(&I2C0);
   i2cStart(&I2C0, &i2cConfig);
-
   /*
    * Thread LCD Screen
    */
-  chThdCreateStatic(waThread_LCD, sizeof(waThread_LCD), NORMALPRIO, Thread_LCD, NULL);
+  //chThdCreateStatic(waThread_LCD, sizeof(waThread_LCD), HIGHPRIO, Thread_LCD, NULL);
 
    /*
    * Thread I2c BUS
    */
-  chThdCreateStatic(waThread_I2C, sizeof(waThread_I2C), 
-                                          HIGHPRIO, Thread_I2C, NULL);
+  chThdCreateStatic(waThread_I2C, sizeof(waThread_I2C),HIGHPRIO, Thread_I2C, NULL);
 
   // Blocks until finish
   chThdWait(chThdSelf());
@@ -181,31 +184,37 @@ void printDHT(void){
   setPos(60,58);
    chprintf((BaseSequentialStream *)&SD1, "Reset: %d", dataprod1_msg);
    
-    chThdSleepMilliseconds(5000);
+    chThdSleepMilliseconds(4000);
 }
 
 void reset(void){
     switch (dataprod1_msg)
   {
-  case Q_TIMEOUT:
-    clearScreen();
-  chprintf((BaseSequentialStream *)&SD1, "TIMEOUT");
-    break;
-  case Q_OK:
-  clearScreen();
-  chprintf((BaseSequentialStream *)&SD1, "RECIVED OK");
-    break;
-  case Q_RESET:
-    clearScreen();
-    chprintf((BaseSequentialStream *)&SD1, "Reset: %d", dataprod1_msg);
-    i2cflags_t i2cFlags = i2cGetErrors(&I2C0);
-    chprintf((BaseSequentialStream *)&SD1, "Flags: %d", i2cFlags);
-    i2cStop(&I2C0);
-    i2cStart(&I2C0, &i2cConfig);
-    break;
-  default:
-    break;
+    case Q_OK:
+      clearScreen();
+      chprintf((BaseSequentialStream *)&SD1, "RECIVED OK");
+      break;
+    case Q_TIMEOUT:
+      clearScreen();
+      chprintf((BaseSequentialStream *)&SD1, "TIMEOUT");
+      /*I2CConfig i2cConfig1;
+      i2cStop(&I2C0);
+      i2cStart(&I2C0, &i2cConfig1);*/
+      break;
+
+    case Q_RESET:
+      clearScreen();
+      chprintf((BaseSequentialStream *)&SD1, "Reset: %d", dataprod1_msg);
+      i2cflags_t i2cFlags = i2cGetErrors(&I2C0);
+      chprintf((BaseSequentialStream *)&SD1, " Flags: %d", i2cFlags);
+      /*I2CConfig i2cConfig;
+      i2cStop(&I2C0);
+      i2cStart(&I2C0, &i2cConfig);*/
+      break;
+    default:
+      break;
   }
+  chThdSleepMilliseconds(2000);
 }
 
 void setX(uint8_t posX)

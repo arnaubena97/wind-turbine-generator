@@ -14,7 +14,8 @@ typedef struct {
 } dht11;
 
 dht11 d1;
-int cnt = 0;
+
+int cnt = 1;
 void receiveFunc(){
     value1=(uint8_t)Wire.read();
     Serial.print("Request data: ");
@@ -38,7 +39,6 @@ void sendRealdt1() {
   }
   
 void setup() {
-  // put your setup code here, to run once:
   d1.temperature = 24.3;
   d1.humidity = 88.4;
   
