@@ -8,6 +8,8 @@
 
 uint8_t value1, value2;
 
+char string1[20] = "hello              ";
+
 typedef struct {
   float temperature;
   float humidity;
@@ -30,13 +32,13 @@ void sendRealdt1() {
   //Serial.println(3* sizeof(dtp1));
   //Wire.write((byte *) &d1, sizeof(dht11));
   //Wire.write((byte *) &d1, 8); //float =4 -> 2 float = 4*2 =8
-  Wire.write((byte *) &cnt, sizeof(cnt));
+  Wire.write(string1, 20);
   Serial.print("Temp:");
   Serial.print(d1.temperature);
   Serial.print("  Hum:");
   Serial.print(d1.humidity);
-    Serial.print("  cnt:");
-  Serial.print(cnt);
+    Serial.print("  size:");
+  Serial.print(sizeof(string1));
   Serial.println("   DHT Sended OK");
   cnt ++;
   }

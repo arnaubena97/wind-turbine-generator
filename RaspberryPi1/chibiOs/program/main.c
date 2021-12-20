@@ -28,10 +28,10 @@ GLOBAL VARIABLES
 MUTEX_DECL(mtx1);
 //Mutex mtx1 = _MUTEX_DATA(mtx1);
 static const uint8_t slave_address = 0x04;
-static WORKING_AREA(waThread_I2C, 256);
+static WORKING_AREA(waThread_I2C, 512);
 static WORKING_AREA(waThread_LCD, 256);
 int cnt = 0;
-
+char provastr[20] = "Arnau";
 /*===========================================
 DECLARE FUNCTIONS
 =============================================*/
@@ -77,14 +77,17 @@ void recieveDataProd1(void){
 chMtxLock(&mtx1); 
   //dataprod1_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&p1, 8, MS2ST(1000)); 
   
-  dataprod1_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&prova,4, MS2ST(1000));  
+  dataprod1_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&provastr,20, TIME_INFINITE);  
+  
   chThdSleepMilliseconds(2000);
+  
   cnt ++;
+  
   reset();
   chMtxUnlock();
                                     
   chThdSleepMilliseconds(2000);   
-                      
+                    
 }
 /*===========================================
 RECIVE DATA PRODUCER 2
@@ -144,7 +147,7 @@ int main(void) {
   /*
    * Thread LCD Screen
    */
-  chThdCreateStatic(waThread_LCD, sizeof(waThread_LCD), HIGHPRIO, Thread_LCD, NULL);
+  chThdCreateStatic(waThread_LCD, sizeof(waThread_LCD), LOWPRIO, Thread_LCD, NULL);
 
    /*
    * Thread I2c BUS
@@ -171,10 +174,10 @@ void printDHT(void){
   chprintf((BaseSequentialStream *)&SD1, " CNT: %d", cnt);
   chThdSleepMilliseconds(100);
   setPos(0,58);
-  chprintf((BaseSequentialStream *)&SD1, " prov: %d", prova);
+  chprintf((BaseSequentialStream *)&SD1, " prov: %s", provastr);
   chThdSleepMilliseconds(100);
-  setPos(60,58);
-  chprintf((BaseSequentialStream *)&SD1, "Reset: %d", dataprod1_msg);
+  //setPos(60,58);
+  //chprintf((BaseSequentialStream *)&SD1, "Reset: %d", dataprod1_msg);
   chThdSleepMilliseconds(4000);
   chMtxUnlock();
 }
@@ -195,8 +198,11 @@ void reset(void){
       chprintf((BaseSequentialStream *)&SD1, "Reset: %d", dataprod1_msg);
       i2cflags_t i2cFlags = i2cGetErrors(&I2C0);
       chprintf((BaseSequentialStream *)&SD1, " Flags: %d", i2cFlags);
+      i2cStop(&I2C0);
+      chThdSleepMilliseconds(500);
       I2CConfig i2cConfig;
       i2cStop(&I2C0);
+      chThdSleepMilliseconds(500);
       i2cStart(&I2C0, &i2cConfig);
       chThdSleepMilliseconds(1000);
       break;
