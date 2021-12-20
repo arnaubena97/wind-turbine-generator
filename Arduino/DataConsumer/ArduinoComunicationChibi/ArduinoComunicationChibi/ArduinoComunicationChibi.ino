@@ -2,7 +2,7 @@
  * SLAVE CONFIG
  */
 
-#include <Wire.h>
+#include "Wire.h"
 
 #define SLAVE_ADDR 0x04
 
@@ -17,9 +17,12 @@ dht11 d1;
 
 int cnt = 1;
 void receiveFunc(){
+  //while(Wire.available()!=1);
     value1=(uint8_t)Wire.read();
-    Serial.print("Request data: ");
+    //value2=(uint8_t)Wire.read();
+    Serial.print("Request data1: ");
     Serial.println(value1);
+
 }
 
 void sendRealdt1() {
@@ -27,12 +30,12 @@ void sendRealdt1() {
   //Serial.println(3* sizeof(dtp1));
   //Wire.write((byte *) &d1, sizeof(dht11));
   //Wire.write((byte *) &d1, 8); //float =4 -> 2 float = 4*2 =8
-  Wire.write((byte *) &cnt, 4);
+  Wire.write((byte *) &cnt, sizeof(cnt));
   Serial.print("Temp:");
   Serial.print(d1.temperature);
   Serial.print("  Hum:");
   Serial.print(d1.humidity);
-    Serial.print("  size:");
+    Serial.print("  cnt:");
   Serial.print(cnt);
   Serial.println("   DHT Sended OK");
   cnt ++;
@@ -46,8 +49,9 @@ void setup() {
   Serial.println("Inicialize wire");
   Wire.begin(SLAVE_ADDR);
   Serial.println("Wire on adress 4");
-    Wire.onRequest(sendRealdt1);
-  Wire.onReceive(receiveFunc);
+    Wire.onReceive(receiveFunc);
+   Wire.onRequest(sendRealdt1);
+
 
 }
 
