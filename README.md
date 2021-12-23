@@ -58,14 +58,20 @@ Connections:
 
 ## Data Consumer
 
+This part consists of displaying on the LCD Screen the data collected in [Data Producer 1](#data-producer-1) and [Data Producer 2](#data-producer-2) that have been sent by the wifi and send them on the raspberry via I2C Bus with an Arduino slave.
+We have put a temperature history and a drawing to understand on which axis there is acceleration.
+
 Components:
 * Arduino Uno
 * ESP-01
-* LCD Screen
-* Raspberry Pi
+* LCD Screen 128 x 64
+* Raspberry Pi 1 2011.12
 
 Connections:
 
+LCD Screen Examples:
+
+![Lcd-Examples](https://user-images.githubusercontent.com/10574631/147292413-78cee10e-c682-46a6-baf2-38729fa778c2.png)
 
 ## Testing with Mosquitto
 

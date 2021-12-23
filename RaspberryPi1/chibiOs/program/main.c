@@ -33,14 +33,13 @@ MUTEX_DECL(mtx1);
 static const uint8_t slave_address = 0x04;
 static WORKING_AREA(waThread_I2C, 512);
 static WORKING_AREA(waThread_LCD, 256);
-int cnt = 0;
-char provastr[20] = "Arnau";
 /*===========================================
 DECLARE FUNCTIONS
 =============================================*/
 void recieveDataProd1(void);
 void recieveDataProd2(void);
 void printDHT(void);
+void printAdxl(void);
 void setX(uint8_t posX);
 void setY(uint8_t posY);
 void setPos(uint8_t posX, uint8_t posY);
@@ -51,6 +50,7 @@ void drawDegree(uint8_t x, uint8_t y);
 void drawGraphic(uint8_t x, uint8_t y);
 void drawLine(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
 void drawColumn(uint8_t x, uint8_t y, uint8_t val);
+void drawCube(uint8_t x, uint8_t y);
 /*===========================================
 STRUCT AND VARIABLES OF DATA PRODUCER 1
 =============================================*/
@@ -60,21 +60,19 @@ typedef struct {
   char name_id[3];
 } dht11;
 dht11 p1;
-
-dht11 data_dp1[NUM_HISTORY];
 msg_t dataprod1_msg;
 
 /*===========================================
 STRUCT AND VARIABLES OF DATA PRODUCER 2
 =============================================*/
 typedef struct {
-  float x_axis;
-  float y_axis;
-  float z_axis;
+  uint8_t x_axis;
+  uint8_t y_axis;
+  uint8_t z_axis;
+  char name_id[3];
 } adxl345;
-adxl345 data_dp2[NUM_HISTORY];
+adxl345 p2;
 msg_t dataprod2_msg;
-int prova =0;
 
 /*===========================================
 RECIVE DATA PRODUCER 1
@@ -82,20 +80,10 @@ RECIVE DATA PRODUCER 1
 void recieveDataProd1(void){
   const uint8_t  req = (uint8_t)0; // request to know how to send on arduino
   //const uint8_t  req2 = (uint8_t)1; 
-chMtxLock(&mtx1); 
+
 
   dataprod1_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&p1, sizeof(p1) , MS2ST(5000)); 
-  reset(dataprod1_msg, 1);
-
-  //dataprod1_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&prova,4, TIME_INFINITE);  
-  
-  chThdSleepMilliseconds(2000);
-  
-  cnt ++;
-  
-  
-  chMtxUnlock();
-                                    
+  reset(dataprod1_msg, 1);                         
   chThdSleepMilliseconds(2000);   
                     
 }
@@ -103,11 +91,11 @@ chMtxLock(&mtx1);
 RECIVE DATA PRODUCER 2
 =============================================*/
 void recieveDataProd2(void){
-  const uint8_t  req = 1; // request to know how to send on arduino
+  const uint8_t  req = (uint8_t)1; // request to know how to send on arduino
 
-  dataprod2_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&data_dp2,
-                                   sizeof(data_dp2), MS2ST(1000));  
- 
+  dataprod2_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&p2,
+                                   sizeof(p2), MS2ST(1000));  
+  reset(dataprod2_msg, 2);   
   chThdSleepMilliseconds(2000);                            
 }
 /*===========================================
@@ -117,25 +105,14 @@ static msg_t Thread_I2C(void *p) {
   (void)p;
   chRegSetThreadName("Recive I2C");
 
- //p1.temperature = (uint8_t) 0;
- p1.humidity = (uint8_t) 2;
-/*data_dp1[0].temperature = (uint8_t)4;
-data_dp1[1].temperature = (uint8_t)0;
-data_dp1[2].temperature = (uint8_t)15;
-data_dp1[3].temperature = (uint8_t)20;
-data_dp1[4].temperature = (uint8_t)27;
-data_dp1[5].temperature = (uint8_t)38;
-data_dp1[6].temperature = (uint8_t)-6;
-data_dp1[7].temperature = (uint8_t)10;*/
-
-
-
  chThdSleepMilliseconds(100);
   while (TRUE) {
+    chMtxLock(&mtx1); 
     recieveDataProd1();
-    //recieveDataProd2();
+    chThdSleepMilliseconds(500);
+    recieveDataProd2();
+    chMtxUnlock();
     chThdSleepMilliseconds(2000);
-
   }
   return 0;
 }
@@ -147,7 +124,10 @@ static msg_t Thread_LCD(void *p) {
   chRegSetThreadName("SerialLCD");
 
   while (TRUE) {
+    chMtxLock(&mtx1);
     printDHT();
+    printAdxl();
+    chMtxUnlock();
   }
   return 0;
 }
@@ -181,75 +161,10 @@ int main(void) {
 
   return 0;
 }
-void reverse(char* str, int len)
-{
-    int i = 0, j = len - 1, temp;
-    while (i < j) {
-        temp = str[i];
-        str[i] = str[j];
-        str[j] = temp;
-        i++;
-        j--;
-    }
-}
-  
-// Converts a given integer x to string str[]. 
-// d is the number of digits required in the output. 
-// If d is more than the number of digits in x, 
-// then 0s are added at the beginning.
-int intToStr(int x, char str[], int d)
-{
-    int i = 0;
-    while (x) {
-        str[i++] = (x % 10) + '0';
-        x = x / 10;
-    }
-  
-    // If number of digits required is more, then
-    // add 0s at the beginning
-    while (i < d)
-        str[i++] = '0';
-  
-    reverse(str, i);
-    str[i] = '\0';
-    return i;
-}
-int power(int x, unsigned int y)
-{
-    if (y == 0)
-        return 1;
-    else if (y % 2 == 0)
-        return power(x, y / 2) * power(x, y / 2);
-    else
-        return x * power(x, y / 2) * power(x, y / 2);
-}
 
-void printfloat(float n, char* res, int afterpoint)
-{
-    // Extract integer part
-    int ipart = (int)n;
-  
-    // Extract floating part
-    float fpart = n - (float)ipart;
-  
-    // convert integer part to string
-    int i = intToStr(ipart, res, 0);
-  
-    // check for display option after point
-    if (afterpoint != 0) {
-        res[i] = '.'; // add dot
-  
-        // Get the value of fraction part upto given no.
-        // of points after dot. The third parameter 
-        // is needed to handle cases like 233.007
-        fpart = fpart * power(10, afterpoint);
-  
-        intToStr((int)fpart, res + i + 1, afterpoint);
-    }
-}
 void printDHT(void){
     chThdSleepMilliseconds(100);
-  chMtxLock(&mtx1);
+  
   if(dataprod1_msg==0){
     clearScreen();
     drawBox(0, MAX_Y, 46, MAX_Y-10);
@@ -274,7 +189,35 @@ void printDHT(void){
     chThdSleepMilliseconds(4000);
     
   }
-  chMtxUnlock();
+  
+}
+
+void printAdxl(void){
+    chThdSleepMilliseconds(100);
+  
+  if(dataprod2_msg==0){
+    clearScreen();
+    drawBox(0, MAX_Y, 46, MAX_Y-10);
+    setPos(2,MAX_Y -2);
+    chprintf((BaseSequentialStream *)&SD1, "DP2-%s", p2.name_id);
+
+    setPos(1,MAX_Y -20);
+    chprintf((BaseSequentialStream *)&SD1, "X: %d ", p2.x_axis);
+
+    setPos(1,MAX_Y -35);
+    chprintf((BaseSequentialStream *)&SD1, "Y: %d ", p2.y_axis);
+
+    setPos(1,MAX_Y -50);
+    chprintf((BaseSequentialStream *)&SD1, "Z: %d ", p2.z_axis);
+
+    chThdSleepMilliseconds(100);
+
+    drawCube(70,23);
+
+    chThdSleepMilliseconds(4000);
+    
+  }
+  
 }
 
 void reset(msg_t data, int type){
@@ -293,10 +236,10 @@ void reset(msg_t data, int type){
       //chprintf((BaseSequentialStream *)&SD1, "TIMEOUT");
       break;
     case RDY_RESET:
-      clearScreen();
-      chprintf((BaseSequentialStream *)&SD1, "Reset: %d", dataprod1_msg);
-      i2cflags_t i2cFlags = i2cGetErrors(&I2C0);
-      chprintf((BaseSequentialStream *)&SD1, " Flags: %d", i2cFlags);
+      //clearScreen();
+      //chprintf((BaseSequentialStream *)&SD1, "Reset: %d", dataprod1_msg);
+      //i2cflags_t i2cFlags = i2cGetErrors(&I2C0);
+      //chprintf((BaseSequentialStream *)&SD1, " Flags: %d", i2cFlags);
       i2cStop(&I2C0);
       chThdSleepMilliseconds(500);
       I2CConfig i2cConfig;
@@ -430,3 +373,26 @@ void drawColumn(uint8_t x, uint8_t y, uint8_t val){
     drawLine(x, y+10, x+3, y+10);
   }
 }
+
+void drawCube(uint8_t x, uint8_t y){
+
+  drawLine(x,y,x+50, y+25);
+  drawLine(x,y,x, y-20);
+  drawLine(x,y, x-30, y+20);
+  drawLine(x,y-20,x+50, y+5);
+  drawLine(x+50,y+25,x+50, y+5);
+  drawLine(x,y-20, x-30, y);
+  drawLine(x-31,y, x-31, y+20);
+  drawLine(x-31,y+20, x+4, MAX_Y-1);
+  drawLine(x+50,y+25, x+29, MAX_Y-1);
+    setPos(x+20, y+3);
+  chprintf((BaseSequentialStream *)&SD1, "X");
+    setPos(x-17, y+1);
+  chprintf((BaseSequentialStream *)&SD1, "Y");
+    setPos(x+4, y+23);
+  chprintf((BaseSequentialStream *)&SD1, "Z");
+
+}
+
+
+
