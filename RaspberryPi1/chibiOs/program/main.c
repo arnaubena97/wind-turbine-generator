@@ -25,7 +25,7 @@
 /*===========================================
 GLOBAL VARIABLES
 =============================================*/
-#define NUM_HISTORY 3
+#define NUM_HISTORY 8
 #define MAX_Y 63
 #define MAX_X 127
 MUTEX_DECL(mtx1);
@@ -45,20 +45,23 @@ void setX(uint8_t posX);
 void setY(uint8_t posY);
 void setPos(uint8_t posX, uint8_t posY);
 void clearScreen(void);
-void reset(void);
+void reset(msg_t data, int type);
 void drawBox(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
 void drawDegree(uint8_t x, uint8_t y);
+void drawGraphic(uint8_t x, uint8_t y);
+void drawLine(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
+void drawColumn(uint8_t x, uint8_t y, uint8_t val);
 /*===========================================
 STRUCT AND VARIABLES OF DATA PRODUCER 1
 =============================================*/
 typedef struct {
   uint8_t humidity;
-  uint8_t temperature;
-  char name_id[8];
+  uint8_t temperature[NUM_HISTORY];
+  char name_id[3];
 } dht11;
 dht11 p1;
 
-//dht11 data_dp1[NUM_HISTORY];
+dht11 data_dp1[NUM_HISTORY];
 msg_t dataprod1_msg;
 
 /*===========================================
@@ -77,18 +80,20 @@ int prova =0;
 RECIVE DATA PRODUCER 1
 =============================================*/
 void recieveDataProd1(void){
-  const uint8_t  req = 0; // request to know how to send on arduino
-  
+  const uint8_t  req = (uint8_t)0; // request to know how to send on arduino
+  //const uint8_t  req2 = (uint8_t)1; 
 chMtxLock(&mtx1); 
-  dataprod1_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&p1, sizeof(dht11) , MS2ST(5000)); 
-  
+
+  dataprod1_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&p1, sizeof(p1) , MS2ST(5000)); 
+  reset(dataprod1_msg, 1);
+
   //dataprod1_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&prova,4, TIME_INFINITE);  
   
   chThdSleepMilliseconds(2000);
   
   cnt ++;
   
-  reset();
+  
   chMtxUnlock();
                                     
   chThdSleepMilliseconds(2000);   
@@ -112,8 +117,19 @@ static msg_t Thread_I2C(void *p) {
   (void)p;
   chRegSetThreadName("Recive I2C");
 
- p1.temperature = (uint8_t) 0;
+ //p1.temperature = (uint8_t) 0;
  p1.humidity = (uint8_t) 2;
+/*data_dp1[0].temperature = (uint8_t)4;
+data_dp1[1].temperature = (uint8_t)0;
+data_dp1[2].temperature = (uint8_t)15;
+data_dp1[3].temperature = (uint8_t)20;
+data_dp1[4].temperature = (uint8_t)27;
+data_dp1[5].temperature = (uint8_t)38;
+data_dp1[6].temperature = (uint8_t)-6;
+data_dp1[7].temperature = (uint8_t)10;*/
+
+
+
  chThdSleepMilliseconds(100);
   while (TRUE) {
     recieveDataProd1();
@@ -238,20 +254,22 @@ void printDHT(void){
     clearScreen();
     drawBox(0, MAX_Y, 46, MAX_Y-10);
     setPos(2,MAX_Y -2);
-    chprintf((BaseSequentialStream *)&SD1, "%s", p1.name_id);
+    chprintf((BaseSequentialStream *)&SD1, "DP1-%s", p1.name_id);
     setPos(1,MAX_Y -24);
-    chprintf((BaseSequentialStream *)&SD1, "%d ", p1.temperature);
-    drawDegree(15, MAX_Y-25);
-    setPos(17,MAX_Y -24);
+    chprintf((BaseSequentialStream *)&SD1, "T: %d ", p1.temperature[7]);
+    drawDegree(33, MAX_Y-25);
+    setPos(35,MAX_Y -24);
     chprintf((BaseSequentialStream *)&SD1, "%s", "C");
     //setpixels
     chThdSleepMilliseconds(100);
 
     setPos(1,MAX_Y -41);
 
-    chprintf((BaseSequentialStream *)&SD1, "%d ", p1.humidity);
+    chprintf((BaseSequentialStream *)&SD1, "H: %d ", p1.humidity);
     sdPut(&SD1, (uint8_t)37);
     chThdSleepMilliseconds(100);
+
+    drawGraphic(65, 10);
 
     chThdSleepMilliseconds(4000);
     
@@ -259,8 +277,12 @@ void printDHT(void){
   chMtxUnlock();
 }
 
-void reset(void){
-    switch (dataprod1_msg)
+void reset(msg_t data, int type){
+  if(type==0){
+    type =9;
+  }
+  
+    switch (data)
   {
     case RDY_OK:
       //clearScreen();
@@ -327,7 +349,7 @@ void drawBox(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2)
   sdPut(&SD1, (uint8_t)x2);
   sdPut(&SD1, (uint8_t)y2);
   //sdPut(&SD1, (uint8_t)0x01);
-  chThdSleepMilliseconds(10);
+  
 }
 
 void setPixel(uint8_t x, uint8_t y)
@@ -338,6 +360,7 @@ void setPixel(uint8_t x, uint8_t y)
   sdPut(&SD1, (uint8_t)y);
   sdPut(&SD1, (uint8_t)0x01);
 }
+
 void drawDegree(uint8_t x, uint8_t y)
 {
   setPixel(x,y);
@@ -349,4 +372,61 @@ void drawDegree(uint8_t x, uint8_t y)
   setPixel(x,y-2);
   setPixel(x-1,y-2);
   
+}
+
+void drawGraphic(uint8_t x, uint8_t y){
+  //axis
+  drawLine(x, y, x, y+50);
+  drawLine(x,y,x+60, y);
+  // values
+  drawLine(x-3, y+50, x, y+50); //40
+  drawLine(x-3, y+40, x, y+40); //30
+  drawLine(x-3, y+30, x, y+30); //20
+  drawLine(x-3, y+20, x, y+20); //10
+  drawLine(x-3, y+10, x, y+10); //0
+
+  setPos(x, y-3);
+  chprintf((BaseSequentialStream *)&SD1, "Time ->");
+
+  drawDegree(x-9, MAX_Y-2);
+  setPos(x-7,MAX_Y -1);
+  chprintf((BaseSequentialStream *)&SD1, "%s", "C");
+
+  setPos(x-9, y+13);
+  chprintf((BaseSequentialStream *)&SD1, "0");
+    setPos(x-14, y+33);
+  chprintf((BaseSequentialStream *)&SD1, "20");
+
+chThdSleepMilliseconds(100);
+  drawColumn(x+3, y, p1.temperature[0]);
+  drawColumn(x+9, y, p1.temperature[1]);
+  drawColumn(x+15, y, p1.temperature[2]);
+  drawColumn(x+21, y, p1.temperature[3]);
+  drawColumn(x+27, y, p1.temperature[4]);
+  drawColumn(x+33, y, p1.temperature[5]);
+  drawColumn(x+39, y, p1.temperature[6]);
+  drawColumn(x+45, y, p1.temperature[7]);
+
+
+}
+
+void drawLine(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2){
+  //draws a line from two given points. You can set and reset just as the pixel function. 
+  sdPut(&SD1, (uint8_t)0x7C);
+  sdPut(&SD1, (uint8_t)0x0C);
+  sdPut(&SD1, (uint8_t)x1);
+  sdPut(&SD1, (uint8_t)y1);
+  sdPut(&SD1, (uint8_t)x2);
+  sdPut(&SD1, (uint8_t)y2);
+  sdPut(&SD1, (uint8_t)0x01);
+}
+
+void drawColumn(uint8_t x, uint8_t y, uint8_t val){
+  if (val != 0){
+    drawLine(x, y+10, x, y +val +10);
+    drawLine(x+1, y+10, x+1, y+ val +10);
+    drawLine(x+2, y+10, x+2, y +val +10);
+  }else if (val==0){
+    drawLine(x, y+10, x+3, y+10);
+  }
 }
