@@ -50,14 +50,24 @@ void setup_wifi() {
 }
 
 
-String message;
+String messageString;
+String messageCounter;
 void callback(char* topic, byte* payload, unsigned int length) {
-  message = "";
-  for (int i = 0; i < length; i++) {
-    message.concat((char) payload[i]);
-    //Serial.print((char)payload[i]);
-    
+  messageCounter = "";
+  messageString = "";
+  if(strcmp(topic, "broker/counter")==0){
+    for (int i = 0; i < length; i++) {
+      messageCounter.concat((char) payload[i]);
+      //Serial.print((char)payload[i]);
+    }
   }
+  else if(strcmp(topic, "broker/string")==0){
+    for (int i = 0; i < length; i++) {
+      messageString.concat((char) payload[i]);
+      //Serial.print((char)payload[i]);
+    }
+  }
+  
   Serial.println();
 
 }
@@ -94,14 +104,23 @@ void setup() {
   client.setCallback(callback);
   client.connect(clientID,clientUserName,clientPassword);
   client.subscribe("broker/counter");
+  client.subscribe("broker/string");
   delay(100);
 
 }
 
 void loop() {
-  for (int i = 0; i < message.length(); i++){
-    Serial.print(message[i]);
+ 
+  for (int i = 0; i < messageCounter.length(); i++){
+    Serial.print(messageCounter[i]); 
   }
-    client.loop();   
-    delay(1000);
+
+  delay(100);
+  
+  for (int i = 0; i < messageString.length(); i++){
+    Serial.print(messageString[i]);
+  }
+
+  client.loop();   
+  delay(1000);
 }
