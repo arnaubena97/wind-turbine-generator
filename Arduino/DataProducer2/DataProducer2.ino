@@ -179,10 +179,10 @@ void loop() {
     writeLCD("X", ax, 0, 0);
     writeLCD("Y", ay, 8, 0);
     writeLCD("Z", az, 0, 1);
-    String mess = "X=" + ax + " Y="+ay+" Z="+az;
+    String mess = "W1;" + ax + ";"+ay+";"+az+"=";
     mess.toCharArray(msg, 50);
-    client.publish("broker/adxl345", msg);
-    delay(500);
+    client.publish("turbines/T1/adxl345", msg);
+    delay(1000);
 }
 
 

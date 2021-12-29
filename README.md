@@ -25,9 +25,11 @@ Components:
 * LCD Screen 128x64
 
 Connections:
+
 ![image](https://user-images.githubusercontent.com/10574631/146461469-68cd5f64-a277-434a-94d7-b0d80d35c5c7.png)
 
 Working:
+
 ![image](https://user-images.githubusercontent.com/10574631/146462222-d41a657e-3c51-4086-b997-24b5d4edfbf1.png)
 
 ## Data Producer 2

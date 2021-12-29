@@ -2,8 +2,8 @@
 #include <PubSubClient.h>
 
 //wifi
-const char* ssid = "ssid1";
-const char* password = "password1";
+const char* ssid = "ssidq";
+const char* password = "passwordq";
 const char* mqtt_server = "192.168.4.1";
 
 const char* clientID = "ESP-01";
@@ -48,25 +48,43 @@ void setup_wifi() {
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 }
+String getValue(String data, char separator, int index)
+{
+    int found = 0;
+    int strIndex[] = { 0, -1 };
+    int maxIndex = data.length() - 1;
 
+    for (int i = 0; i <= maxIndex && found <= index; i++) {
+        if (data.charAt(i) == separator || i == maxIndex) {
+            found++;
+            strIndex[0] = strIndex[1] + 1;
+            strIndex[1] = (i == maxIndex) ? i+1 : i;
+        }
+    }
+    return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
+}
 
 String messageString;
-String messageCounter;
+String messageAdxl;
 void callback(char* topic, byte* payload, unsigned int length) {
-  messageCounter = "";
+  messageAdxl = "adxl;";
   messageString = "";
-  if(strcmp(topic, "broker/counter")==0){
+  String first = getValue(topic, '/', 0);
+  String last = getValue(topic, '/', 2);
+  if( first.equals("turbines")){
+  if(last.equals("adxl345")){
     for (int i = 0; i < length; i++) {
-      messageCounter.concat((char) payload[i]);
+      messageAdxl.concat((char) payload[i]);
       //Serial.print((char)payload[i]);
     }
   }
-  else if(strcmp(topic, "broker/string")==0){
+  }
+  /*else if(strcmp(topic, "broker/string")==0){
     for (int i = 0; i < length; i++) {
       messageString.concat((char) payload[i]);
       //Serial.print((char)payload[i]);
     }
-  }
+  }*/
   
   Serial.println();
 
@@ -103,23 +121,20 @@ void setup() {
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
   client.connect(clientID,clientUserName,clientPassword);
-  client.subscribe("broker/counter");
-  client.subscribe("broker/string");
+  //client.subscribe("#");
+  client.subscribe("turbines/+/adxl345");
   delay(100);
 
 }
 
 void loop() {
  
-  for (int i = 0; i < messageCounter.length(); i++){
-    Serial.print(messageCounter[i]); 
+  for (int i = 0; i < messageAdxl.length(); i++){
+    Serial.print(messageAdxl[i]); 
   }
 
   delay(100);
-  
-  for (int i = 0; i < messageString.length(); i++){
-    Serial.print(messageString[i]);
-  }
+
 
   client.loop();   
   delay(1000);
