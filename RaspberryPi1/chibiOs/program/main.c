@@ -198,7 +198,7 @@ void printDHT(void){
     
   }else{
     clearScreen();
-    setPos(1,MAX_Y/2;
+    setPos(1,MAX_Y/2);
     chprintf((BaseSequentialStream *)&SD1, "DP1 no data");
     chThdSleepMilliseconds(2000);
   }
@@ -231,7 +231,7 @@ void printAdxl(void){
     
   }else{
     clearScreen();
-    setPos(1,MAX_Y/2;
+    setPos(1,MAX_Y/2);
     chprintf((BaseSequentialStream *)&SD1, "DP1 no data");
     chThdSleepMilliseconds(2000);
   }
