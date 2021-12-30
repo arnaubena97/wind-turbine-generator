@@ -118,10 +118,10 @@ void readESP(){
 }
 
 void loop(){
-  delay(100);
+  /*delay(100);
   readESP();
   delay(100);
   
-  Serial.print("\n");
-  delay(3000);  
+  //Serial.print("\n");
+  delay(100); */ 
 }

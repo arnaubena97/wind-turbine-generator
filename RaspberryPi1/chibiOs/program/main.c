@@ -28,6 +28,7 @@ GLOBAL VARIABLES
 #define NUM_HISTORY 8
 #define MAX_Y 63
 #define MAX_X 127
+#define SPEED 10000
 MUTEX_DECL(mtx1);
 //Mutex mtx1 = _MUTEX_DATA(mtx1);
 static const uint8_t slave_address = 0x04;
@@ -80,23 +81,30 @@ RECIVE DATA PRODUCER 1
 void recieveDataProd1(void){
   const uint8_t  req = (uint8_t)0; // request to know how to send on arduino
   //const uint8_t  req2 = (uint8_t)1; 
-
-
-  dataprod1_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&p1, sizeof(p1) , MS2ST(5000)); 
+  /*clearScreen();
+    setPos(2,20);
+    chprintf((BaseSequentialStream *)&SD1, "Reciving dp1");*/
+  dataprod1_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&p1, sizeof(p1) , MS2ST(3000)); 
   reset(dataprod1_msg, 1);                         
   chThdSleepMilliseconds(2000);   
-                    
+   //   setPos(2,40);
+    //chprintf((BaseSequentialStream *)&SD1, "Recived dp1: %d", dataprod1_msg);                                
+              
 }
 /*===========================================
 RECIVE DATA PRODUCER 2
 =============================================*/
 void recieveDataProd2(void){
   const uint8_t  req = (uint8_t)1; // request to know how to send on arduino
-
+  clearScreen();
+    setPos(2,20);
+    chprintf((BaseSequentialStream *)&SD1, "Reciving dp2");
   dataprod2_msg = i2cMasterTransmitTimeout(&I2C0, slave_address, &req, 1, (uint8_t *)&p2,
                                    sizeof(p2), MS2ST(1000));  
   reset(dataprod2_msg, 2);   
-  chThdSleepMilliseconds(2000);                            
+  chThdSleepMilliseconds(2000); 
+        setPos(2,40);
+    chprintf((BaseSequentialStream *)&SD1, "Recived dp2: %d", dataprod2_msg);                                
 }
 /*===========================================
 THREAD I2C BUS
@@ -144,7 +152,7 @@ int main(void) {
    */
   I2CConfig i2cConfig;
   //i2cStop(&I2C0);
-  i2cConfig.ic_speed = 10000;
+  i2cConfig.ic_speed = SPEED;
   i2cStart(&I2C0, &i2cConfig);
   /*
    * Thread LCD Screen
@@ -236,14 +244,16 @@ void reset(msg_t data, int type){
       //chprintf((BaseSequentialStream *)&SD1, "TIMEOUT");
       break;
     case RDY_RESET:
-      //clearScreen();
-      //chprintf((BaseSequentialStream *)&SD1, "Reset: %d", dataprod1_msg);
-      //i2cflags_t i2cFlags = i2cGetErrors(&I2C0);
-      //chprintf((BaseSequentialStream *)&SD1, " Flags: %d", i2cFlags);
-      i2cStop(&I2C0);
+      clearScreen();
+      chprintf((BaseSequentialStream *)&SD1, "Reset: %d", dataprod1_msg);
+      i2cflags_t i2cFlags = i2cGetErrors(&I2C0);
+      chprintf((BaseSequentialStream *)&SD1, " Flags: %d", i2cFlags);
       chThdSleepMilliseconds(500);
       I2CConfig i2cConfig;
-      i2cConfig.ic_speed = 10000;
+      chThdSleepMilliseconds(500);
+      i2cStop(&I2C0);
+      chThdSleepMilliseconds(500);
+      i2cConfig.ic_speed = SPEED;
       chThdSleepMilliseconds(500);
       i2cStart(&I2C0, &i2cConfig);
       chThdSleepMilliseconds(1000);
