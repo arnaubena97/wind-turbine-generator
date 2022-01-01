@@ -91,13 +91,14 @@ void loop() {
   drawBoxes();
   printText(t, h, hic);
 
-  String mess = "Temp=" + String(t);
+  //String mess = "Temp=" + String(t);
+  //mess.toCharArray(msg, 50);
+  //String mess2 = "Hum=" + String(h);
+  String mess = "W1;" + String(h) + ";"+ String(t) +"=";
   mess.toCharArray(msg, 50);
-  String mess2 = "Hum=" + String(h);
-  mess2.toCharArray(msg2, 50);
-  client.publish("broker/dht11/Temp", msg);
-  client.publish("broker/dht11/Hum", msg2);
-  
+  //client.publish("broker/dht11/Temp", msg);
+  //client.publish("broker/dht11/Hum", msg2);
+  client.publish("turbines/W1/dht11", msg);
   
   delay(1500);
 }

@@ -181,7 +181,7 @@ void loop() {
     writeLCD("Z", az, 0, 1);
     String mess = "W1;" + ax + ";"+ay+";"+az+"=";
     mess.toCharArray(msg, 50);
-    client.publish("turbines/T1/adxl345", msg);
+    client.publish("turbines/W1/adxl345", msg);
     delay(1000);
 }
 

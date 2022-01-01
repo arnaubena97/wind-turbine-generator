@@ -5,11 +5,6 @@
 const char* ssid = "ssidq";
 const char* password = "passwordq";
 const char* mqtt_server = "192.168.4.1";
-
-const char* clientID = "ESP-01";
-const char* clientUserName = "ESP-01";
-const char* clientPassword = "ESP-01";
-
 //variables globals del callback
 /*
 byte* buffer;
@@ -64,27 +59,33 @@ String getValue(String data, char separator, int index)
     return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
 
-String messageString;
+String messageDht;
 String messageAdxl;
 void callback(char* topic, byte* payload, unsigned int length) {
   messageAdxl = "adxl;";
-  messageString = "";
+  messageDht = "dht;";
   String first = getValue(topic, '/', 0);
   String last = getValue(topic, '/', 2);
   if( first.equals("turbines")){
-  if(last.equals("adxl345")){
-    for (int i = 0; i < length; i++) {
-      messageAdxl.concat((char) payload[i]);
-      //Serial.print((char)payload[i]);
+    if(last.equals("adxl345")){
+      for (int i = 0; i < length; i++) {
+        messageAdxl.concat((char) payload[i]);
+          
+      }
+      for (int i = 0; i < messageAdxl.length(); i++){
+    Serial.print(messageAdxl[i]); 
+  }
+    }
+    else if(last.equals("dht11")){
+      for (int i = 0; i < length; i++) {
+        messageDht.concat((char) payload[i]);
+        
+      }
+        for (int i = 0; i < messageDht.length(); i++){
+    Serial.print(messageDht[i]); 
+  }
     }
   }
-  }
-  /*else if(strcmp(topic, "broker/string")==0){
-    for (int i = 0; i < length; i++) {
-      messageString.concat((char) payload[i]);
-      //Serial.print((char)payload[i]);
-    }
-  }*/
   
   Serial.println();
 
@@ -93,7 +94,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 void reconnect() {
  // Loop until we're reconnected
- // while (!client.connected()) {
+  while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Create a random client ID
     String clientId = "ESP8266Client-";
@@ -102,9 +103,10 @@ void reconnect() {
     if (client.connect(clientId.c_str())) {
       Serial.println("connected");
       // Once connected, publish an announcement...
-      client.publish("outTopic", "hello world");
+      //client.publish("outTopic", "hello world");
       // ... and resubscribe
-      client.subscribe("#");
+        client.subscribe("turbines/+/adxl345");
+  client.subscribe("turbines/+/dht11");
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -113,6 +115,7 @@ void reconnect() {
       delay(1000);
     }
 }
+}
 
 void setup() {
   //wifi
@@ -120,22 +123,17 @@ void setup() {
   setup_wifi();
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
-  client.connect(clientID,clientUserName,clientPassword);
   //client.subscribe("#");
   client.subscribe("turbines/+/adxl345");
+  client.subscribe("turbines/+/dht11");
   delay(100);
 
 }
 
 void loop() {
- 
-  for (int i = 0; i < messageAdxl.length(); i++){
-    Serial.print(messageAdxl[i]); 
-  }
-
-  delay(100);
-
-
+   if (!client.connected()) {
+        reconnect();
+     }
+  delay(500);
   client.loop();   
-  delay(1000);
 }
