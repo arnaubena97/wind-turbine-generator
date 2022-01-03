@@ -71,6 +71,8 @@ Components:
 
 Connections:
 
+![conectionsdatconsum](https://user-images.githubusercontent.com/10574631/147952599-b2877996-da45-4810-9420-53db5e893a3e.png)
+
 LCD Screen Examples:
 
 ![Lcd-Examples](https://user-images.githubusercontent.com/10574631/147292413-78cee10e-c682-46a6-baf2-38729fa778c2.png)
