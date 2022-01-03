@@ -18,7 +18,6 @@ typedef struct {
   uint8_t y_axis;
   uint8_t z_axis;
   char name_id[3];
-
 } adxl345;
 adxl345 d2;
 

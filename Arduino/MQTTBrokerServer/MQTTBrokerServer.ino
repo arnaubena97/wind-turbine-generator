@@ -14,8 +14,8 @@ uMQTTBroker myBroker;
 char ssid[] = "ssidq";      // your network SSID (name)
 char pass[] = "passwordq"; // your network password
 
-const byte numPins = 4;
-byte pins[] = {0, 1, 2, 3};
+const byte numPins = 6;
+byte pins[] = {0, 1, 2, 3, 4, 5};
 byte var;
 void setup() { 
   Serial.begin(9600);
